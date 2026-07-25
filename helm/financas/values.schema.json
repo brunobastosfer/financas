@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "backend": {
+      "type": "object",
+      "required": ["image", "service", "config"],
+      "properties": {
+        "replicaCount": { "type": "integer", "minimum": 1 },
+        "image": {
+          "type": "object",
+          "required": ["repository", "tag"],
+          "properties": {
+            "repository": { "type": "string", "minLength": 1 },
+            "tag": { "type": "string", "minLength": 1 }
+          }
+        }
+      }
+    },
+    "frontend": {
+      "type": "object",
+      "required": ["image", "service"],
+      "properties": {
+        "replicaCount": { "type": "integer", "minimum": 1 },
+        "image": {
+          "type": "object",
+          "required": ["repository", "tag"],
+          "properties": {
+            "repository": { "type": "string", "minLength": 1 },
+            "tag": { "type": "string", "minLength": 1 }
+          }
+        }
+      }
+    },
+    "existingSecret": {
+      "type": "object",
+      "properties": { "name": { "type": "string" } }
+    }
+  }
+}

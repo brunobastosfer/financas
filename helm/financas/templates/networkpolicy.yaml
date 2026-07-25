@@ -1,0 +1,71 @@
+{{- if .Values.networkPolicy.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "financas.fullname" . }}-frontend
+  labels:
+    {{- include "financas.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "financas.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: frontend
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ .Values.networkPolicy.ingressNamespace }}
+      ports:
+        - protocol: TCP
+          port: {{ .Values.frontend.service.targetPort }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "financas.fullname" . }}-backend
+  labels:
+    {{- include "financas.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "financas.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: backend
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ .Values.networkPolicy.ingressNamespace }}
+        - podSelector:
+            matchLabels:
+              {{- include "financas.selectorLabels" . | nindent 14 }}
+              app.kubernetes.io/component: frontend
+      ports:
+        - protocol: TCP
+          port: {{ .Values.backend.service.port }}
+{{- if .Values.postgresql.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "financas.fullname" . }}-postgresql
+  labels:
+    {{- include "financas.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "financas.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: postgresql
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- include "financas.selectorLabels" . | nindent 14 }}
+              app.kubernetes.io/component: backend
+      ports:
+        - protocol: TCP
+          port: 5432
+{{- end }}
+{{- end }}

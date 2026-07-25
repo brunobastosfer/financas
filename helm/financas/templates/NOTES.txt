@@ -1,0 +1,15 @@
+1. Crie o Secret antes da instalação:
+
+   kubectl create secret generic {{ include "financas.secretName" . }} \
+     --from-literal=DATABASE_URL='postgresql://usuario:senha@host:5432/nos_dois?schema=public' \
+     --from-literal=JWT_SECRET='uma-chave-aleatoria-com-no-minimo-32-caracteres' \
+     --from-literal=POSTGRES_PASSWORD='uma-senha-forte'
+
+2. Instale ou atualize:
+
+   helm upgrade --install {{ .Release.Name }} {{ .Chart.Name }} \
+     --namespace {{ .Release.Namespace }} --create-namespace
+
+3. A aplicação ficará disponível em:
+
+   https://{{ .Values.ingress.host }}

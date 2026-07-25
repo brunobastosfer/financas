@@ -1,0 +1,99 @@
+name: financas
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-nos_dois}
+      POSTGRES_USER: ${POSTGRES_USER:-nos_dois}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nos_dois_dev}
+    ports:
+      - "${POSTGRES_PORT:-5434}:5432"
+    volumes:
+      - financas_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    security_opt:
+      - no-new-privileges:true
+
+  mailpit:
+    image: axllent/mailpit:v1.27
+    restart: unless-stopped
+    ports:
+      - "${SMTP_PORT:-1025}:1025"
+      - "${MAILPIT_UI_PORT:-8025}:8025"
+    security_opt:
+      - no-new-privileges:true
+
+  backend:
+    build:
+      context: ./financas-backend
+      target: runtime
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3333
+      DATABASE_URL: postgresql://${POSTGRES_USER:-nos_dois}:${POSTGRES_PASSWORD:-nos_dois_dev}@postgres:5432/${POSTGRES_DB:-nos_dois}?schema=public
+      JWT_SECRET: ${JWT_SECRET:-desenvolvimento-local-chave-jwt-com-mais-de-32-caracteres}
+      JWT_EXPIRES_SECONDS: ${JWT_EXPIRES_SECONDS:-604800}
+      WEB_ORIGIN: ${WEB_ORIGIN:-http://localhost:3000}
+      SMTP_HOST: mailpit
+      SMTP_PORT: 1025
+      SMTP_FROM: ${SMTP_FROM:-Nós Dois <convites@nosdois.local>}
+      RUN_DATABASE_MIGRATIONS: "true"
+      RUN_DATABASE_SEED: ${RUN_DATABASE_SEED:-true}
+    ports:
+      - "${BACKEND_PORT:-3333}:3333"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3333/api/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      start_period: 20s
+      retries: 10
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+  frontend:
+    build:
+      context: ./financas-frontend
+      target: runtime
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3333/api}
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-3000}:8080"
+    depends_on:
+      backend:
+        condition: service_healthy
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /var/cache/nginx
+      - /var/run
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  financas_postgres_data:

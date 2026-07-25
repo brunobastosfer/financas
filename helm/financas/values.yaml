@@ -1,0 +1,113 @@
+nameOverride: ""
+fullnameOverride: ""
+
+imagePullSecrets: []
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+backend:
+  replicaCount: 2
+  image:
+    repository: ghcr.io/sua-organizacao/financas-backend
+    tag: "1.0.0"
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 3333
+  config:
+    nodeEnv: production
+    jwtExpiresSeconds: "604800"
+    webOrigin: https://financas.local
+    smtpHost: mail.example.com
+    smtpPort: "587"
+    smtpFrom: Nós Dois <convites@example.com>
+    runDatabaseMigrations: "false"
+    runDatabaseSeed: "false"
+  resources:
+    requests:
+      cpu: 100m
+      memory: 192Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  autoscaling:
+    enabled: false
+    minReplicas: 2
+    maxReplicas: 6
+    targetCPUUtilizationPercentage: 70
+
+frontend:
+  replicaCount: 2
+  image:
+    repository: ghcr.io/sua-organizacao/financas-frontend
+    tag: "1.0.0"
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 80
+    targetPort: 8080
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+  autoscaling:
+    enabled: false
+    minReplicas: 2
+    maxReplicas: 6
+    targetCPUUtilizationPercentage: 70
+
+existingSecret:
+  # O Secret deve conter DATABASE_URL, JWT_SECRET e POSTGRES_PASSWORD.
+  name: financas-secrets
+
+secrets:
+  # Usados apenas quando existingSecret.name estiver vazio.
+  databaseUrl: ""
+  jwtSecret: ""
+  postgresqlPassword: ""
+
+postgresql:
+  enabled: true
+  image:
+    repository: postgres
+    tag: "16-alpine"
+    pullPolicy: IfNotPresent
+  database: nos_dois
+  username: nos_dois
+  storage:
+    size: 10Gi
+    storageClassName: ""
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations: {}
+  host: financas.local
+  tls:
+    enabled: true
+    secretName: financas-tls
+
+networkPolicy:
+  enabled: true
+  ingressNamespace: ingress-nginx
+
+podDisruptionBudget:
+  enabled: true
+
+podAnnotations: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}

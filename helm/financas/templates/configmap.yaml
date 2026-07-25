@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "financas.fullname" . }}-backend
+  labels:
+    {{- include "financas.labels" . | nindent 4 }}
+data:
+  NODE_ENV: {{ .Values.backend.config.nodeEnv | quote }}
+  PORT: {{ .Values.backend.service.port | quote }}
+  JWT_EXPIRES_SECONDS: {{ .Values.backend.config.jwtExpiresSeconds | quote }}
+  WEB_ORIGIN: {{ .Values.backend.config.webOrigin | quote }}
+  SMTP_HOST: {{ .Values.backend.config.smtpHost | quote }}
+  SMTP_PORT: {{ .Values.backend.config.smtpPort | quote }}
+  SMTP_FROM: {{ .Values.backend.config.smtpFrom | quote }}
+  RUN_DATABASE_MIGRATIONS: {{ .Values.backend.config.runDatabaseMigrations | quote }}
+  RUN_DATABASE_SEED: {{ .Values.backend.config.runDatabaseSeed | quote }}
