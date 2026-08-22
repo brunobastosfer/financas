@@ -10,7 +10,7 @@ ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 COPY . .
 RUN npm run build
 
-FROM nginxinc/nginx-unprivileged:1.27-alpine AS runtime
+FROM nginxinc/nginx-unprivileged:1.30-alpine AS runtime
 COPY nginx/default.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/out /usr/share/nginx/html
 EXPOSE 8080
